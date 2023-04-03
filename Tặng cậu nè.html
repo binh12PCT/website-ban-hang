@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<!--	<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+							<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+							<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script> -->
+</head>
+<body>
+	<style>
+		.merrywrap {
+			position: absolute;
+			right: 0px;
+			left: 0px;
+			bottom: 0px;
+			top: 0px;
+			background-color: antiquewhite;
+			transition: background-color 0.5s ease;
+			z-index: 1000;
+			height: 102vh;
+		}
+
+		.giftbox {
+			position: absolute;
+			width: 300px;
+			height: 200px;
+			left: 50%;
+			margin-left: -150px;
+			top: 40%;
+			z-index: 10;
+		}
+
+		.giftbox>div {
+			background: #d44;
+			position: absolute;
+		}
+
+		.giftbox>div:after,
+		.giftbox>div:before {
+			position: absolute;
+			content: "";
+			top: 0;
+		}
+
+		.giftbox:after {
+			position: absolute;
+			color: #fff;
+			width: 100%;
+			content: '';
+			left: 0;
+			bottom: 0;
+			font-size: 50px;
+			text-align: center;
+			transform: rotate(-20deg);
+			transform-origin: 0 0;
+
+		}
+
+		.giftbox .cover {
+			width: 100%;
+			top: 0;
+			left: 0;
+			height: 25%;
+			z-index: 2;
+		}
+
+		.giftbox .cover:before {
+			position: absolute;
+			height: 100%;
+			left: 50%;
+			width: 50px;
+			transform: translateX(-50%);
+			background: #fdc56d;
+		}
+
+		.giftbox .cover>div {
+			position: absolute;
+			width: 50px;
+			height: 50px;
+			left: 50%;
+			top: -50px;
+			transform: translateX(-50%);
+		}
+
+		.giftbox .cover>div:before,
+		.giftbox .cover>div:after {
+			position: absolute;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+			content: "";
+			box-shadow: inset 0 0 0 15px #fdc56d;
+			border-radius: 30px;
+			transform-origin: 50% 100%;
+		}
+
+		.giftbox .cover>div:before {
+			transform: translateX(-45%) skewY(40deg);
+		}
+
+		.giftbox .cover>div:after {
+			transform: translateX(45%) skewY(-40deg);
+		}
+
+		.giftbox .box {
+			right: 5%;
+			left: 5%;
+			height: 80%;
+			bottom: 0;
+		}
+
+		.giftbox .box:before {
+			width: 50px;
+			height: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			background: #fdc56d;
+		}
+
+		.giftbox .box:after {
+			width: 100%;
+			height: 30px;
+			background: rgba(0, 0, 0, 0.2);
+		}
+
+		body {
+			margin: 0;
+			color: #CC313D;
+			background: antiquewhite;
+		}
+		canvas {
+			z-index: 1;
+			position: absolute;
+		}
+		#output {
+			display: none;
+			position: absolute;
+			color: white;
+			z-index: 2;
+		}
+		h1 {
+			transform: translate(45%,300%);
+			text-align: center;
+			font-size: 17px;
+			flex: 1;
+			align-items: center;
+		}
+		.btn {
+			position: absolute;
+			top: 500%;
+			background: white;
+			border: transparent;
+			padding: 16px;
+			font-size: 20px;
+			z-index: 999;
+		}
+		.yes {
+			left: 125%;
+		}
+		.no {
+			left: 30%;
+		}
+		@keyframes wobble {
+			25% {
+				transform: rotate(16deg);
+			}
+
+			75% {
+				transform: rotate(-8deg);
+			}
+		}
+		@keyframes flyUp {
+			75% {
+				opacity: 1;
+			}
+
+			100% {
+				transform: translateY(-4000px) rotate(20deg);
+				opacity: 0;
+			}
+		}
+		@keyframes flyDown {
+			75% {
+				opacity: 1;
+			}
+
+			100% {
+				transform: translateY(1750%);
+				opacity: 0;
+			}
+		}
+	</style>
+	<canvas></canvas>
+	<div id="merrywrap" class="merrywrap">
+		<div class="giftbox">
+			<div class="cover">
+				<div></div>
+			</div>
+			<div class="box"></div>
+		</div>
+	</div>
+	<div id="balloon-container">
+	</div>
+	<script>
+		let answer = false
+		const canvas = document.querySelector('canvas')
+		const c = canvas.getContext('2d')
+		let cw = canvas.width = window.innerWidth
+		let ch = canvas.height = window.innerHeight
+		let color = '#CC313D'
+		let move = 0
+		let radius = 40
+		let filled = false
+		let endPiLeft = 0 //0.7
+		let endPiRight = 1 //2.3
+		let leftMoveToLineX = cw/2-2*radius+15+move
+		let leftMoveToLineY = ch/2+31.3
+		let drawPointLeftLineX = leftMoveToLineX
+		let drawPointLeftLineY = leftMoveToLineY
+		let XlineToLeft = cw/2+radius/100-1+move
+		let YlineToLeft = ch/2+2*radius
+		let rightMoveToLineX = cw/2+(2*radius)-15+move
+		let rightMoveToLineY = ch/2+31.3
+		let drawPointRightLineX = rightMoveToLineX
+		let drawPointRightLineY = rightMoveToLineY
+		let XlinetoRight = cw/2-radius/100+1+move
+		let YlineToRight = ch/2+2*radius
+		let radiusLeft = 0
+		let hideText = true
+		let hueBg = 0, saturation = 0, lightness = 0
+		let giftBox = document.querySelector('.giftBox')
+		let cover = document.querySelector('.cover')
+		let box = document.querySelector('.box')
+		//352, 76, 87
+		//make Heart
+		console.log(giftBox)
+		{
+			function drawCircle(LR, start, begin, tf, startPi, endPi) {
+				if (LR === 'left') {
+					c.beginPath()
+					c.arc(start, begin, radius, Math.PI*startPi, Math.PI*endPi, tf)
+					c.strokeStyle = color
+					c.fillStyle = color
+					c.fill()
+					if (endPiLeft >= -1.3) {
+						endPiLeft -= 0.01/1.3
+					}
+					c.stroke()
+					if (endPiLeft < -1.3) {
+						lineToo('left')
+					}
+					if (!filled) {}
+				}
+				if (LR === 'right') {
+					let rad = 0
+					c.beginPath()
+					c.arc(start, begin, radius, Math.PI*startPi, Math.PI*endPi, tf)
+					c.strokeStyle = color
+					c.fillStyle = color
+					c.fill()
+					if (endPiRight < 2.3) {
+						endPiRight += 0.01/1.3
+					}
+					c.stroke()
+					if (endPiRight > 2.3) {
+						lineToo('right')
+					}
+				}
+			}
+
+			function line() {
+				c.moveTo(cw/2, 0)
+				c.lineTo(cw/2, ch)
+				c.strokeStyle = color
+				c.stroke()
+			}
+			function lineToo(LR) {
+				if (LR === "left") {
+					c.beginPath()
+					c.moveTo(leftMoveToLineX, leftMoveToLineY)//ok
+					c.strokeStyle = color
+					c.lineTo(drawPointLeftLineX, drawPointLeftLineY)
+					c.lineTo(cw/2+move, ch/2)
+					c.fillStyle = color
+					c.fill()
+					c.stroke()
+					if (drawPointLeftLineX < XlineToLeft) {
+						drawPointLeftLineX += 0.8175
+					}
+					if (drawPointLeftLineY < YlineToLeft) {
+						drawPointLeftLineY += 0.6125
+					}
+					c.closePath()
+				}
+				if (LR === "right") {
+					c.beginPath()
+					c.moveTo(rightMoveToLineX, rightMoveToLineY)
+					c.strokeStyle = color
+					c.lineTo(drawPointRightLineX, drawPointRightLineY)
+					c.lineTo(cw/2+move, ch/2)
+					c.fillStyle = color
+					c.fill()
+					c.stroke()
+					if (drawPointRightLineX > XlinetoRight) {
+						drawPointRightLineX -= 0.8175
+					}
+					if (drawPointRightLineY < YlineToRight) {
+						drawPointRightLineY += 0.6125
+					}
+					c.closePath()
+				}
+			}
+			function changeBg() {
+				let a = 4.5
+				let hslColor = 'hsl(' + hueBg + ',' +saturation + '%, ' + lightness + '%)';
+				canvas.style.backgroundColor = hslColor
+				if (hueBg <= 352) {
+					hueBg += 3.52*a
+				}
+				if (saturation <= 76) {
+					saturation += 0.076*a
+				}
+				if (lightness <= 87) {
+					lightness += 0.087*a
+				}
+			}
+
+			function drawHeart() {
+				//trái //xong
+				drawCircle('left', cw/2-radius+move, ch/2, true, 0, endPiLeft)
+				//phải //xong
+				drawCircle('right', cw/2+radius+move, ch/2, true, endPiRight, 1)
+				changeBg()
+			}
+			function changePos() {
+				noBtn.style.left = Math.random()*cw
+				noBtn.style.top = Math.random()*ch
+			}
+			/*
+			noBtn.addEventListener('click', () => {
+				changePos()
+			})
+			yesBtn.addEventListener('click', () => {
+				answer = true
+				loop()
+			})
+			*/
+		}
+		//đang làm dở
+
+		let wantToSay = 'To cung vay',
+		note = 'code by: '
+		myName = 'code by: Nguyên Bình :3',
+		myCrush = 'Cát Linh',
+		icon1 = '😍',
+		icon2 = ' 😎',
+		arrayAlpha = [],
+		arrayText = [],
+		arrayAlphaNote = [],
+		arrayAlphaName = []
+		{
+			function crash(text, array) {
+				for (let alpha of text) {
+					array.push(alpha)
+				}
+			}
+			function makeText() {
+				let velocity = 2.3
+				crash(wantToSay, arrayAlpha)
+				// Tớ cũng 1 --> 7
+				let upText = 50
+				for (let i = 0; i <= 7; i++) {
+					arrayText.push(new Text('text', arrayAlpha[i], upText, 100, velocity))
+					upText += 30
+					velocity -= 0.07
+				}
+				// thích cậu :>  8 --> hết
+				let downText = 20
+				for (let i = 8; i < arrayAlpha.length; i++) {
+					arrayText.push(new Text('text', arrayAlpha[i], downText, 150, velocity))
+					downText += 25
+					velocity += 0.07
+				}
+			}
+			function makeNote() {
+				let x = 200
+				let velocity = 5
+				crash(note, arrayAlphaNote)
+				for (let i = 0; i < arrayAlphaNote.length; i++) {
+					arrayText.push(new Text('note', arrayAlphaNote[i], x, 600, velocity))
+					x += 13
+					velocity -= 0.25
+				}
+			}
+			function makeName() {
+				let x = 40
+				let y = 100
+				let velocity = 2
+				crash(myName, arrayAlphaName)
+				for (let i = 0; i < 7; i++) {
+					arrayText.push(new Text('name', arrayAlphaName[i], x, y, velocity))
+					x += 15
+				}
+				y += 0
+				x += 2
+				for (let j = 7; j < arrayAlphaName.length; j++) {
+					arrayText.push(new Text('name', arrayAlphaName[j], x, y, velocity))
+					x += 15
+				}
+
+			}
+			function makeIcon(icon) {
+				arrayText.push(new Text('icon', icon, 500, 500, 3))
+			}
+			//viết chữ
+			//	makeText()
+			//viết icon
+			//	makeIcon()
+		}
+		function makeAlpha(text,x,y){
+			arrayText.push(new Text('alpha',text,x,y,11,-0.001))
+		}
+		console.log(arrayText)
+		//	console.log(arrayText)
+		function Text(type, text, x, y, velocity, acceleration) {
+			this.type = type
+			this.text = text
+			this.x = x
+			this.y = y
+			this.yDefault = -0
+			this.xDefault = -30
+			this.velocity = velocity
+			this.acceleration = acceleration
+			if (this.text === 'í') {
+				this.x += 9.3
+			}
+			if (this.text === 'ì') {
+				this.x += 5
+			}
+			if(this.text === 'g'){
+				this.x += 0.5
+			}
+			if(this.type === 'alpha'){
+				this.font = '130px Arial'
+			}
+			if (this.type === 'note') {
+				this.font = '30px Arial'
+			}
+			if (this.type === 'text') {
+				this.font = '50px Arial'
+			}
+			if (this.type === 'name') {
+				this.font = '25px Arial'
+			}
+			this.draw = function(Wdefault1, Wdefault2) {
+				c.font = (this.font)
+				c.fillStyle = color
+				c.fillText(this.text, Wdefault1, Wdefault2)
+			}
+			this.fall = function() {
+				if (this.type === 'text' || this.type === 'note') {
+					this.draw(this.x, this.yDefault)
+					if (this.yDefault < this.y) {
+						this.yDefault += this.velocity
+					}
+				}
+				if (this.type === 'name') {
+					this.draw(this.xDefault, this.y)
+					if (this.xDefault < this.x) {
+						this.xDefault += this.velocity
+					}
+				}
+				if (this.type === 'icon') {
+					this.draw(this.x, this.yDefault)
+					if (this.yDefault < this.y) {
+						this.yDefault += this.velocity
+					}
+					
+				}
+				if(this.type === 'alpha'){
+					this.draw(this.x,this.yDefault)
+					if(this.yDefault < this.y){
+						this.yDefault += this.velocity
+/* hiệu ứng phanh*/		this.velocity =  this.velocity-this.velocity/100
+/* hiệu ứng nảy*/
+						
+					}else{ //khi chạm đích
+						
+					}
+				}
+			}
+			this.update = function() {}
+		}
+				// when animating on canvas, it is best to use requestAnimationFrame instead of setTimeout or setInterval
+		// not supported in all browsers though and sometimes needs a prefix, so we need a shim
+		window.requestAnimFrame = (function() {
+			return window.requestAnimationFrame ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame ||
+			function(callback) {
+				window.setTimeout(callback, 1000 / 60);
+			};
+		})();
+
+		// now we will setup our basic variables for the demo
+		// full screen dimensions
+		// firework collection
+		let fireworks = [],
+		// particle collection
+		particles = [],
+		// starting hue
+		hue = 330,
+		// when launching fireworks with a click, too many get launched at once without a limiter, one launch per 5 loop ticks
+		limiterTotal = 5,
+		limiterTick = 0,
+		// this will time the auto launches of fireworks, one launch per 80 loop ticks
+		timerTotal = 35,//delay mỗi pháo hoa
+		timerTick = 0,
+		mousedown = false,
+		// mouse x coordinate,
+		mx,
+		// mouse y coordinate
+		my;
+
+		// set canvas dimensions
+		canvas.width = cw;
+		canvas.height = ch;
+
+		// now we are going to setup our function placeholders for the entire demo
+
+		// get a random number within a range
+		function random(min, max) {
+			return Math.random() * (max - min) + min;
+		}
+
+		// calculate the distance between two points
+		function calculateDistance(p1x, p1y, p2x, p2y) {
+			var xDistance = p1x - p2x,
+			yDistance = p1y - p2y;
+			return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+		}
+
+		// create firework
+		function Firework(sx, sy, tx, ty) {
+			// actual coordinates
+			this.x = sx;
+			this.y = sy;
+			// starting coordinates
+			this.sx = sx;
+			this.sy = sy;
+			// target coordinates
+			this.tx = tx;
+			this.ty = ty;
+			// distance from starting point to target
+			this.distanceToTarget = calculateDistance(sx, sy, tx, ty);
+			this.distanceTraveled = 0;
+			// track the past coordinates of each firework to create a trail effect, increase the coordinate count to create more prominent trails
+			this.coordinates = [];
+			this.coordinateCount = 1;
+			// populate initial coordinate collection with the current coordinates
+			while (this.coordinateCount--) {
+				this.coordinates.push([this.x, this.y]);
+			}
+			this.angle = Math.atan2(ty - sy, tx - sx);
+			this.speed = 2;
+			this.acceleration = 1.03;
+			this.brightness = random(69, 70);
+			// circle target indicator radius
+		//	this.targetRadius = 1;
+		}
+
+		// update firework
+		Firework.prototype.update = function(index) {
+			// remove last item in coordinates array
+			this.coordinates.pop();
+			// add current coordinates to the start of the array
+			this.coordinates.unshift([this.x, this.y]);
+
+			// cycle the circle target indicator radius
+			/*
+			if (this.targetRadius < 8) {
+				this.targetRadius += 0.3;
+			} else {
+				this.targetRadius = 1;
+			}
+			*/
+			// speed up the firework
+			this.speed *= this.acceleration;
+
+			// get the current velocities based on angle and speed
+			var vx = Math.cos(this.angle) * this.speed,
+			vy = Math.sin(this.angle) * this.speed;
+			// how far will the firework have traveled with velocities applied?
+			this.distanceTraveled = calculateDistance(this.sx, this.sy, this.x + vx, this.y + vy);
+
+			// if the distance traveled, including velocities, is greater than the initial distance to the target, then the target has been reached
+			if (this.distanceTraveled >= this.distanceToTarget) {
+				createParticles(this.tx, this.ty);
+				// remove the firework, use the index passed into the update function to determine which to remove
+				fireworks.splice(index, 1);
+			} else {
+				// target not reached, keep traveling
+				this.x += vx;
+				this.y += vy;
+			}
+		}
+
+		// draw firework
+		Firework.prototype.draw = function() {
+			c.beginPath();
+			// move to the last tracked coordinate in the set, then draw a line to the current x and y
+			c.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+			c.lineTo(this.x, this.y);
+			c.strokeStyle = 'hsl(' + hue + ', 100%, ' + this.brightness + '%)';
+			c.stroke();
+			/*
+			c.beginPath();
+			// draw the target for this firework with a pulsing circle
+			c.arc(this.tx, this.ty, this.targetRadius, 0, Math.PI * 2);
+			c.stroke();
+			*/
+		}
+
+		// create particle
+		function Particle(x, y) {
+			this.x = x;
+			this.y = y;
+			// track the past coordinates of each particle to create a trail effect, increase the coordinate count to create more prominent trails
+			this.coordinates = [];
+			this.coordinateCount = 5;//độ đậm hạt
+			while (this.coordinateCount--) {
+				this.coordinates.push([this.x, this.y]);
+			}
+			// set a random angle in all possible directions, in radians
+			this.angle = random(0, Math.PI * 2);
+			this.speed = random(1, 10);
+			// friction will slow the particle down
+			this.friction = 1;
+			// gravity will be applied and pull the particle down
+			this.gravity = 1;
+			// set the hue to a random number +-20 of the overall hue variable
+			this.hue = random(hue - 20, hue + 20);
+			this.brightness = random(29, 30);
+			this.alpha = 1;
+			// set how fast the particle fades out
+			this.decay = random(0.015, 0.003);
+		}
+
+		// update particle
+		Particle.prototype.update = function(index) {
+			// remove last item in coordinates array
+			this.coordinates.pop();
+			// add current coordinates to the start of the array
+			this.coordinates.unshift([this.x, this.y]);
+			// slow down the particle
+			this.speed *= this.friction;
+			// apply velocity
+			this.x += Math.cos(this.angle) * this.speed;
+			this.y += Math.sin(this.angle) * this.speed + this.gravity;
+			// fade out the particle
+			this.alpha -= this.decay;
+
+			// remove the particle once the alpha is low enough, based on the passed in index
+			if (this.alpha <= this.decay) {
+				particles.splice(index, 1);
+			}
+		}
+
+		// draw particle
+		Particle.prototype.draw = function() {
+			c. beginPath();
+			// move to the last tracked coordinates in the set, then draw a line to the current x and y
+			c.moveTo(this.coordinates[this.coordinates.length - 1][0], this.coordinates[this.coordinates.length - 1][1]);
+			c.lineTo(this.x, this.y);
+			c.strokeStyle = 'hsla(' + this.hue + ', 100%, ' + this.brightness + '%, ' + this.alpha + ')';
+			c.stroke();
+		}
+
+		// create particle group/explosion
+		function createParticles(x, y) {
+			// increase the particle count for a bigger explosion, beware of the canvas performance hit with the increased particles though
+			var particleCount = 200;
+			while (particleCount--) {
+				particles.push(new Particle(x, y));
+			}
+		}
+
+		// main demo loop
+
+		// mouse event bindings
+		// update the mouse coordinates on mousemove
+		canvas.addEventListener('mousemove', function(e) {
+			mx = e.pageX - canvas.offsetLeft;
+			my = e.pageY - canvas.offsetTop;
+		});
+
+		// toggle mousedown state and prevent canvas from being selected
+		canvas.addEventListener('mousedown', function(e) {
+			e.preventDefault();
+			mousedown = true;
+		});
+
+		canvas.addEventListener('mouseup', function(e) {
+			e.preventDefault();
+			mousedown = false;
+		});
+
+		function loop() {
+			c.clearRect(0, 0, cw, ch)
+			requestAnimationFrame(loop)
+			drawHeart()
+			arrayText.map(Text => Text.fall())
+						// this function will run endlessly with requestAnimationFrame
+
+			// increase the hue to get different colored fireworks over time
+			hue += 0.5;
+
+			// normally, clearRect() would be used to clear the canvas
+			// we want to create a trailing effect though
+			// setting the composite operation to destination-out will allow us to clear the canvas at a specific opacity, rather than wiping it entirely
+		//	c.globalCompositeOperation = 'destination-out';
+			// decrease the alpha property to create more prominent trails
+			c.fillStyle = 'rgba(0, 0, 0, 0)';
+			c.fillRect(0, 0, cw, ch);
+			// change the composite operation back to our main mode
+			// lighter creates bright highlight points as the fireworks and particles overlap each other
+		//	c.globalCompositeOperation = 'lighter';
+
+			// loop over each firework, draw it, update it
+			var i = fireworks.length;
+			while (i--) {
+				fireworks[i].draw();
+				fireworks[i].update(i);
+			}
+
+			// loop over each particle, draw it, update it
+			var i = particles.length;
+			while (i--) {
+				particles[i].draw();
+				particles[i].update(i);
+			}
+			var fireworkChance = Math.random()
+			// launch fireworks automatically to random coordinates, when the mouse isn't down
+			if (timerTick >= timerTotal) {
+					// start the firework at the bottom middle of the screen, then set the random target coordinates, the random y coordinates will be set within the range of the top half of the screen
+					fireworks.push(new Firework(
+						random(20,cw-20), 
+						ch, 
+						random(20, cw-20), 
+						random(0, ch / 2)
+						));
+					timerTick = 0;
+			} else {
+				timerTick++;
+			}
+
+			// limit the rate at which fireworks get launched when mouse is down
+			if (limiterTick >= limiterTotal) {
+				if (mousedown) {
+					// start the firework at the bottom middle of the screen, then set the current mouse coordinates as the target
+					fireworks.push(new Firework(cw / 2, ch, mx, my));
+					limiterTick = 0;
+				}
+			} else {
+				limiterTick++;
+			}
+		}
+		giftBox.addEventListener('click',() => {
+			giftBox.style.pointerEvents = 'none'
+			cover.style.animation = 'wobble 1s 1 Linear'
+			setTimeout(() => {
+				cover.style.animation = 'flyUp 1s 1 Linear Forwards'
+				box.style.animation = 'flyDown 1s 1 Linear Forwards'
+				setTimeout(() => {
+					document.querySelector('#merrywrap').remove()
+					loop()
+					setTimeout(() => {
+					//	makeNote()
+/* Tên bên trái */		makeAlpha('A',cw/3.2,ch/1.86)
+/* Tên bên phải */		makeAlpha('E',cw/1.65,ch/1.86)
+						setTimeout(() => {
+							makeName()
+						},200)
+					},1000)
+				},700)
+			},1000)
+		})
+	</script>
+</body>
+</html>
